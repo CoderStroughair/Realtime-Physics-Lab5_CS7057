@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utilities.h"
+#include "Collision.h"
 #include <list>
 
 class Particle;
@@ -284,7 +285,7 @@ public:
 
 	void applyForce(RigidBody& b)
 	{
-		GLfloat constants = -0.5 * 1.225 * 1.05 * 1;
+		GLfloat constants = 0.5 * 1.225 * 1.05 * 1;
 		vec3 velocity = vec3(b.velocity.v[0] * b.velocity.v[0], b.velocity.v[1] * b.velocity.v[1], b.velocity.v[2] * b.velocity.v[2]);
 		b.addForce(velocity*constants, vec3(0.0, 0.0, 0.0));
 	}
@@ -393,7 +394,7 @@ public:
 		{
 			bodies[i].force = vec3(0.0, 0.0, 0.0);
 			g.applyForce(bodies[i]);
-			//d.applyForce(bodies[i]);
+			d.applyForce(bodies[i]);
 			bodies[i].torque = vec3(-1.0, 5.0, 5.0);
 			bodies[i].resolveForce(delta);
 		}
@@ -453,21 +454,70 @@ public:
 	}
 	void checkPlaneCollisions(vec3 point, vec3 normal, float delta)
 	{
-		float coRest = 0.0;
 		for (int i = 0; i < numBodies; i++)
 		{
-			if (dot((bodies[i].position - point), normal) <= bodies[i].radius+0.00001f && dot(bodies[i].linMomentum, normal) < 0.00001f)
+			if (dot((bodies[i].position - point), normal) <= bodies[i].radius + 0.00001f)
 			{
-				vec3 deltaX = bodies[i].position - normal * 1.4 * dot((bodies[i].position - point), normal);
-				bodies[i].position = deltaX;
-				bodies[i].linMomentum -= (normal*dot(bodies[i].linMomentum, normal))*(1 + coRest);
+				for (int j = 0; j < bodies[i].mesh.newpoints.size(); j=j+3)
+				{
+					vec3 vertex = vec3(bodies[i].mesh.newpoints[j], bodies[i].mesh.newpoints[j+1], bodies[i].mesh.newpoints[j+2]);
+					vec3 closestPoint = getClosestPointPlane(normal, point, vertex);
+					cout << getDistance(vertex, closestPoint) << endl;
+					if (getDistance(vertex, closestPoint) < 0.001f)
+					{
+						bool collisionContact = false;
+						vec3 impulse = calculateImpulse(bodies[i], normal, vertex, collisionContact);
+
+						bodies[i].linMomentum += impulse;
+						cout << "Collision" << endl;
+						if (collisionContact)
+						{
+							vec3 torque = cross(vertex - bodies[i].position, impulse);
+							bodies[i].angMomentum += torque * 0.5f;
+						}
+					}
+				}
 			}
-			/*if (dot((bodies[i].position - point), normal) < 0.00001f && dot(bodies[i].linMomentum, normal) < 0.00001f)
-			{
-				vec3 deltaX = bodies[i].position - normal * 1.4 * dot((bodies[i].position - point), normal);
-				bodies[i].position = deltaX;
-				bodies[i].linMomentum = bodies[i].linMomentum - (normal*dot(bodies[i].linMomentum, normal))*(1 + coRest);
-			}*/
 		}
+	}
+
+	vec3 calculateImpulse(RigidBody& body, vec3 normal, vec3 vertex, bool& collisionContact)
+	{
+		//first, determine whether the body is moving away from the plane, if its stationary, or if its colliding with it
+		//Next, calculate the impulse. If they are colliding or resting against eachother, you'll calculate slightly different values.
+		//Obviously if the two objects are going in opposite directions, return an empty vec3.
+		//If the two objects fully collide, then set collisionContact to true, so you can add torque to the calculation.
+
+		vec3 pa = body.linMomentum + cross(body.angMomentum, vertex - body.position);
+		vec3 ra = vertex - body.position;
+		float v_rel = dot(normal, pa);
+
+		if (v_rel >= 0.001f)	//Objects are moving away from eachother
+		{
+			collisionContact = false;
+			return vec3(0.0, 0.0, 0.0);
+		}
+
+		float numerator = -(1 + 0.6f)*v_rel;
+		float t1 = 1.0f / body.mass;
+		vec3 t2_1 = cross(ra, normal);
+		vec4 t2_2 = body.iInv * vec4(t2_1, 0.0);
+		vec3 t2_3 = cross(vec3(t2_2.v[0], t2_2.v[1], t2_2.v[2]), ra);
+		float t2 = dot(normal, t2_3);
+
+		if (v_rel >= -0.001f)	//Objects are barely moving in relation to eachother
+		{
+			collisionContact = false;
+			float impulse_collision = numerator / (t1 + t2);
+			return normal * impulse_collision;
+		}
+
+		else	//Objects are properly colliding with eachother
+		{
+			collisionContact = true;
+			float impulse_rest = numerator / (t1 + t2);
+			return normal * impulse_rest;
+		}
+
 	}
 };

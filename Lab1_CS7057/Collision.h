@@ -1,6 +1,8 @@
 #pragma once
 #include "Utilities.h"
 
+//P0 is always the point from which you are getting the distance
+
 vec3 getClosestPointTriangle(vec3 triangle[], vec3 p0);
 vec3 getClosestPointLine(vec3 line[], vec3 p0);
 vec3 getClosestPointPlane(vec3 normal, vec3 p1, vec3 p0);

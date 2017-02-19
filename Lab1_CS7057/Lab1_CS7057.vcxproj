@@ -62,9 +62,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D96C787A-8E68-470B-90D6-B96D1208E597}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Lab1_CS7057</RootNamespace>
+    <RootNamespace>Lab5_CS7057</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>Lab3</ProjectName>
+    <ProjectName>Lab5</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

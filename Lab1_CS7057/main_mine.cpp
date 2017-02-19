@@ -62,7 +62,7 @@ void init()
 	cubeMapID.initCubeMap(vertices, 36, "desert");
 	cubeID.init(CUBE_MESH);
 
-	bodySystem = RigidBodySystem(10, CUBE_MESH);
+	bodySystem = RigidBodySystem(1, CUBE_MESH);
 }
 
 void display() 
@@ -107,11 +107,11 @@ void updateScene() {
 			update_text(textID, output.c_str());
 
 			bodySystem.applyForces(delta);
-			bodySystem.checkSphericalCollisions();
-			bodySystem.checkPlaneCollisions(vec3(5.0, 0.0, 0.0), vec3(1.0, 1.0, 0.0), delta);
-			bodySystem.checkPlaneCollisions(vec3(-5.0, 0.0, 0.0), vec3(-1.0, 1.0, 0.0), delta);
-			bodySystem.checkPlaneCollisions(vec3(5.0, 20.0, 0.0), vec3(1.0, -1.0, 0.0), delta);
-			bodySystem.checkPlaneCollisions(vec3(-5.0, 20.0, 0.0), vec3(-1.0, -1.0, 0.0), delta);
+			//bodySystem.checkSphericalCollisions();
+			bodySystem.checkPlaneCollisions(vec3(5.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), delta);
+			//bodySystem.checkPlaneCollisions(vec3(-5.0, 0.0, 0.0), vec3(-1.0, 1.0, 0.0), delta);
+			//bodySystem.checkPlaneCollisions(vec3(5.0, 20.0, 0.0), vec3(1.0, -1.0, 0.0), delta);
+			//bodySystem.checkPlaneCollisions(vec3(-5.0, 20.0, 0.0), vec3(-1.0, -1.0, 0.0), delta);
 
 		}
 	}
