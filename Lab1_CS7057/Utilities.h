@@ -24,14 +24,12 @@ using namespace std;
 
 #define DEFAULT_VERT	"../Shaders/simpleVertexShader.txt"
 #define DEFAULT_FRAG	"../Shaders/simpleFragmentShader.txt"
-
 #define CUBEMAP_RIGHT	"-posx.png"
 #define CUBEMAP_LEFT	"-negx.png"
 #define CUBEMAP_TOP		"-posy.png"
 #define CUBEMAP_BOT		"-negy.png"
 #define CUBEMAP_FRONT	"-posz.png"
 #define CUBEMAP_BACK	"-negz.png"
-
 #define TEXTURE_FOLDER "../Textures/"
 
 #pragma region FRAMEBUFFER

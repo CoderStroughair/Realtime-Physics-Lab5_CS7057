@@ -95,7 +95,7 @@ public:
 
 	mat4 iInv;
 	vec3 velocity;				//Linear Velocity v(t) = P(t) / m
-	vec3 angVelocity;			//w(t)
+	vec3 angVelocity;			//w(t) = L(t) / I(t)
 	
 	vec3 force;
 	vec3 torque;				//rho(t) = d/dt L(t) = SUM((pi - x(t))*fi)
@@ -103,7 +103,7 @@ public:
 	float boundingBox[6];
 
 	RigidBody() {};
-	RigidBody(vec3 x, vec3 P, vec3 L, float m, float h, float d, float w, Mesh _mesh) 
+	RigidBody(vec3 x, vec3 P, vec3 L, float m, float h, float d, float w, Mesh _mesh)
 	{
 		identifier = rand() % 1000000000;
 		initialposition = x;
@@ -154,6 +154,7 @@ public:
 		if (force.v[0])
 			cout <<"";
 		linMomentum += force*delta;
+		//angMomentum *= 0.9f;
 		angMomentum += torque*delta;
 
 		velocity = linMomentum / mass;
@@ -382,7 +383,7 @@ public:
 			{
 				Mesh m;
 				m.init(mesh);
-				RigidBody body(vec3(i*2, 15.0f, j*2), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), 100.0f, 1.0f, 1.0f, 1.0f, m);
+				RigidBody body(vec3(i*2, 5.0f, j*2), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), 10.0f, 1.0f, 1.0f, 1.0f, m);
 				bodies.push_back(body);
 			}
 		}
@@ -394,8 +395,8 @@ public:
 		{
 			bodies[i].force = vec3(0.0, 0.0, 0.0);
 			g.applyForce(bodies[i]);
-			d.applyForce(bodies[i]);
-			bodies[i].torque = vec3(-1.0, 5.0, 5.0);
+			//d.applyForce(bodies[i]);
+			bodies[i].torque = vec3(0.0, 0.0, 0.0);
 			bodies[i].resolveForce(delta);
 		}
 	}
@@ -456,42 +457,46 @@ public:
 	{
 		for (int i = 0; i < numBodies; i++)
 		{
+			vec3 impulse = vec3(0.0, 0.0, 0.0);
+			vec3 torque = vec3(0.0, 0.0, 0.0);
+			int impulseCount = 0;
+			bool collisionContact = false;
 			if (dot((bodies[i].position - point), normal) <= bodies[i].radius + 0.00001f)
 			{
-				for (int j = 0; j < bodies[i].mesh.newpoints.size(); j=j+3)
+				for (int j = 0; j < bodies[i].mesh.mesh_vertex_count; j++)
 				{
-					vec3 vertex = vec3(bodies[i].mesh.newpoints[j], bodies[i].mesh.newpoints[j+1], bodies[i].mesh.newpoints[j+2]);
+					vec3 vertex = vec3(bodies[i].mesh.newpoints[j*3], bodies[i].mesh.newpoints[j*3+1], bodies[i].mesh.newpoints[j*3+2]);
 					vec3 closestPoint = getClosestPointPlane(normal, point, vertex);
-					cout << getDistance(vertex, closestPoint) << endl;
-					if (getDistance(vertex, closestPoint) < 0.001f)
+					print(closestPoint);
+					if (pointToPlane(vertex, normal, closestPoint) <= 0.00001f)
 					{
-						bool collisionContact = false;
-						vec3 impulse = calculateImpulse(bodies[i], normal, vertex, collisionContact);
-
-						bodies[i].linMomentum += impulse;
-						cout << "Collision" << endl;
+						impulse += calculateImpulse(bodies[i], normal, vertex, collisionContact);
+						impulseCount++;
 						if (collisionContact)
 						{
-							vec3 torque = cross(vertex - bodies[i].position, impulse);
-							bodies[i].angMomentum += torque * 0.5f;
+							torque += cross(vertex - bodies[i].position, impulse);
 						}
 					}
 				}
 			}
+			if (impulseCount)
+			{
+				bodies[i].linMomentum += impulse / impulseCount;
+				bodies[i].angMomentum += torque / impulseCount;
+			}
 		}
 	}
 
-	vec3 calculateImpulse(RigidBody& body, vec3 normal, vec3 vertex, bool& collisionContact)
+	vec3 calculateImpulse(RigidBody& body, vec3 normal, vec3 contact_vertex, bool& collisionContact)
 	{
 		//first, determine whether the body is moving away from the plane, if its stationary, or if its colliding with it
 		//Next, calculate the impulse. If they are colliding or resting against eachother, you'll calculate slightly different values.
 		//Obviously if the two objects are going in opposite directions, return an empty vec3.
 		//If the two objects fully collide, then set collisionContact to true, so you can add torque to the calculation.
 
-		vec3 pa = body.linMomentum + cross(body.angMomentum, vertex - body.position);
-		vec3 ra = vertex - body.position;
+		vec3 pa = body.velocity + cross(body.angVelocity, (contact_vertex - body.position));
+		vec3 ra = contact_vertex - body.position;
 		float v_rel = dot(normal, pa);
-
 		if (v_rel >= 0.001f)	//Objects are moving away from eachother
 		{
 			collisionContact = false;
@@ -501,22 +506,22 @@ public:
 		float numerator = -(1 + 0.6f)*v_rel;
 		float t1 = 1.0f / body.mass;
 		vec3 t2_1 = cross(ra, normal);
-		vec4 t2_2 = body.iInv * vec4(t2_1, 0.0);
+		vec4 t2_2 = body.iInv * vec4(t2_1, 1.0);
 		vec3 t2_3 = cross(vec3(t2_2.v[0], t2_2.v[1], t2_2.v[2]), ra);
 		float t2 = dot(normal, t2_3);
 
-		if (v_rel >= -0.001f)	//Objects are barely moving in relation to eachother
+		if (v_rel >= -0.01f)	//Objects are barely moving in relation to eachother
 		{
 			collisionContact = false;
-			float impulse_collision = numerator / (t1 + t2);
-			return normal * impulse_collision;
+			float impulse = (-1 * v_rel) / (t1 + t2);
+			return normal * impulse;
 		}
 
 		else	//Objects are properly colliding with eachother
 		{
 			collisionContact = true;
-			float impulse_rest = numerator / (t1 + t2);
-			return normal * impulse_rest;
+			float impulse = numerator / (t1 + t2);
+			return normal * (impulse);
 		}
 
 	}

@@ -95,24 +95,21 @@ void updateScene() {
 		cam.movForward(frontCam*speed);
 		cam.movRight(sideCam*speed);
 		cam.changeFront(pitCam, yawCam, rolCam);
-		update_text(textID, "Paused");
+		string output = "EULER_MODE: Front: [" + to_string(cam.getFront().v[0]) + ", " + to_string(cam.getFront().v[1]) + ", " + to_string(cam.getFront().v[2]) + "]\n";
+		output += "Position: [" + to_string(cam.getPosition().v[0]) + ", " + to_string(cam.getPosition().v[1]) + ", " + to_string(cam.getPosition().v[2]) + "]\n";
+		output += "Up: [" + to_string(cam.getUp().v[0]) + ", " + to_string(cam.getUp().v[1]) + ", " + to_string(cam.getUp().v[2]) + "]\n";
+		output += "Pitch: " + to_string(cam.pitch) + "\n";
+		output += "Yaw: " + to_string(cam.yaw) + "\n";
+		output += "Roll: " + to_string(cam.roll) + "\n";
+		output += "Object Position: [" + to_string(bodySystem.bodies[0].position.v[0]) + ", " + to_string(bodySystem.bodies[0].position.v[1]) + ", " + to_string(bodySystem.bodies[0].position.v[2]) + "]\n";
+		output += "Object Momentum: [" + to_string(bodySystem.bodies[0].linMomentum.v[0]) + ", " + to_string(bodySystem.bodies[0].linMomentum.v[1]) + ", " + to_string(bodySystem.bodies[0].linMomentum.v[2]) + "]\n";
+		update_text(textID, output.c_str());
 		if (!pause)
 		{
-			string output = "EULER_MODE: Front: [" + to_string(cam.getFront().v[0]) + ", " + to_string(cam.getFront().v[1]) + ", " + to_string(cam.getFront().v[2]) + "]\n";
-			output += "Position: [" + to_string(cam.getPosition().v[0]) + ", " + to_string(cam.getPosition().v[1]) + ", " + to_string(cam.getPosition().v[2]) + "]\n";
-			output += "Up: [" + to_string(cam.getUp().v[0]) + ", " + to_string(cam.getUp().v[1]) + ", " + to_string(cam.getUp().v[2]) + "]\n";
-			output += "Pitch: " + to_string(cam.pitch) + "\n";
-			output += "Yaw: " + to_string(cam.yaw) + "\n";
-			output += "Roll: " + to_string(cam.roll) + "\n";
-			update_text(textID, output.c_str());
+
 
 			bodySystem.applyForces(delta);
-			//bodySystem.checkSphericalCollisions();
-			bodySystem.checkPlaneCollisions(vec3(5.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), delta);
-			//bodySystem.checkPlaneCollisions(vec3(-5.0, 0.0, 0.0), vec3(-1.0, 1.0, 0.0), delta);
-			//bodySystem.checkPlaneCollisions(vec3(5.0, 20.0, 0.0), vec3(1.0, -1.0, 0.0), delta);
-			//bodySystem.checkPlaneCollisions(vec3(-5.0, 20.0, 0.0), vec3(-1.0, -1.0, 0.0), delta);
-
+			bodySystem.checkPlaneCollisions(vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), delta);
 		}
 	}
 	

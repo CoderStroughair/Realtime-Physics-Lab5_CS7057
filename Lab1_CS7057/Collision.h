@@ -77,6 +77,12 @@ float getDistance(vec3 v0, vec3 v1)
 	return sqrt(x_sq + y_sq + z_sq);
 }
 
+float pointToPlane(vec3 p0, vec3 normal, vec3 p1)
+{
+	normal = normalise(normal);
+	return dot(p0 - p1, normal);
+}
+
 void getClosestTriangleTriangle(vec3 first[], vec3 second[], vec3 &point1, vec3 &point2)
 {
 
